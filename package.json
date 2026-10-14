@@ -1,0 +1,12 @@
+{
+  "name": "mybudjet",
+  "version": "1.0.0",
+  "private": true,
+  "description": "مصاريفي - static PWA front-end for the Apps Script backend",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i src/input.css -o app.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

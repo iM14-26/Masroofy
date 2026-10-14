@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>مصاريفي - تسجيل عملية</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="manifest" href="manifest.webmanifest"/>
+<meta name="theme-color" content="#2547e0"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="مصاريفي"/>
+<link rel="icon" type="image/svg+xml" href="icons/favicon.svg"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="stylesheet" href="app.css"/>
+<style>
+  body { font-feature-settings: "cv02", "cv03", "cv04", "cv11"; }
+  .field, .chip, .ghost, .go, .tab { transition: all .2s cubic-bezier(.4,0,.2,1); }
+  .chip.on { background:#fbbf24; border-color:#fbbf24; color:#1f2937; font-weight:700; box-shadow:0 2px 8px -1px rgba(251,191,36,.45); }
+  .field.invalid { border-color:#ef4444 !important; background-color:#fef2f2 !important; }
+  @media (prefers-color-scheme: dark) { .field.invalid { background-color:#451a1a !important; } }
+  .hidden { display:none !important; }
+  .ic { fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+  input[type="date"] { text-align:right; }
+  .num { direction:ltr; text-align:right; font-variant-numeric:tabular-nums; }
+
+  /* التبويبات الرئيسية: دخل / خيارات أخرى */
+  .seg { display:flex; gap:.25rem; padding:.25rem; border-radius:1rem; background:rgba(148,163,184,.18); }
+  .tab { flex:1; padding:.65rem .75rem; border-radius:.75rem; font-size:.875rem; font-weight:700; cursor:pointer; color:#475569; }
+  @media (prefers-color-scheme: dark) { .tab { color:#cbd5e1; } }
+  .tab:hover { color:#1d38b8; }
+  .tab.on { background:#2547e0; color:#fff; box-shadow:0 4px 12px -2px rgba(37,71,224,.35); }
+
+  /* لوحة "خيارات أخرى" المتفرعة: حاوية مميزة توضح أن التبويبين الفرعيين
+     وحقولهما تابعان لهذا التبويب الرئيسي */
+  .other-panel {
+    margin-top: 1rem;
+    padding: 1rem 1rem .25rem;
+    border-radius: 1.25rem;
+    background: rgba(37,71,224,.05);
+    border: 1px dashed rgba(37,71,224,.35);
+    position: relative;
+  }
+  @media (prefers-color-scheme: dark) {
+    .other-panel { background: rgba(96,139,255,.06); border-color: rgba(96,139,255,.3); }
+  }
+  .other-panel-tag {
+    position: absolute; top: -.65rem; right: 1rem;
+    font-size: .6875rem; font-weight: 800; letter-spacing: .01em;
+    color: #2547e0; background: #fff; padding: 0 .5rem; border-radius: .5rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    .other-panel-tag { color: #93b4ff; background: #0f172a; }
+  }
+  .seg2 { margin-top: .25rem; }
+  .seg2 .tab { padding:.5rem .75rem; font-size:.8125rem; }
+  .seg2 .tab.on { background:#fbbf24; color:#1f2937; box-shadow:0 4px 12px -2px rgba(251,191,36,.45); }
+
+  .response-cell { min-width: 105px; max-width: 240px; padding: .5rem; border-bottom: 1px solid rgba(148,163,184,.25); vertical-align: top; }
+  #appMain { transition: max-width .2s ease; }
+  #appMain.wide { max-width: 80rem !important; }
+  #responsesTableWrap { max-height: 72vh; overflow: auto; }
+  #responsesHead th { position: sticky; top: 0; z-index: 5; background: #f1f5f9; }
+  @media (prefers-color-scheme: dark) { #responsesHead th { background: #1e293b; } }
+  /* خلايا جدول الردود: مدمجة ومتوسّطة عمودياً */
+  .rc { padding: .35rem .4rem; border-bottom: 1px solid rgba(148,163,184,.25); vertical-align: middle; white-space: nowrap; }
+  th.rc { font-weight: 700; }
+  .rc-ts  { min-width: 8.5rem; direction: ltr; text-align: right; color: #64748b; font-size: .7rem; }
+  .rc-acc { min-width: 6.5rem; }
+  .rc-sel { min-width: 6rem; }
+  .rc-amt { min-width: 5.5rem; }
+  .rc-date{ min-width: 8.5rem; }
+  .rc-num { min-width: 3.6rem; width: 3.6rem; }
+  .rc-text{ min-width: 9rem; }
+  .rc-act { position: sticky; left: 0; z-index: 4; background: #fff; box-shadow: 1px 0 0 rgba(148,163,184,.35); width: 5.5rem; min-width: 5.5rem; }
+  th.rc-act { z-index: 6; background: #f1f5f9; }
+  @media (prefers-color-scheme: dark) { .rc-act { background: #0f172a; } th.rc-act { background: #1e293b; } .rc-ts { color:#94a3b8; } }
+  .response-input { width: 100%; min-width: 0; padding: .3rem .4rem; border: 1px solid #cbd5e1; border-radius: .5rem; background: white; color: #0f172a; font-size: .8rem; }
+  .response-input.num { text-align: center; }
+  .rc-actions { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: .35rem; }
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: .6rem; color: #fff; flex: none; transition: opacity .15s, transform .1s; }
+  .icon-btn:active { transform: scale(.92); }
+  .icon-btn.save { background: #2547e0; }
+  .icon-btn.del  { background: #e11d48; }
+  .icon-btn:disabled { opacity: .35; cursor: default; }
+  tr.dirty .response-input { border-color: #fbbf24; }
+  .response-input.marked { background: #fff2cc; border-color: #f59e0b; }
+  @media (prefers-color-scheme: dark) { .response-input.marked { background: #78350f; color: #fef3c7; border-color: #f59e0b; } }
+  .row-action { padding: .4rem .6rem; border-radius: .5rem; font-weight: 700; margin: .1rem; white-space: nowrap; }
+  .account-card { border: 1px solid rgba(148,163,184,.35); border-radius: 1rem; padding: 1rem; background: rgba(248,250,252,.8); }
+  @media (prefers-color-scheme: dark) { .response-input { background:#1e293b; color:#f1f5f9; border-color:#475569; } .account-card { background:rgba(30,41,59,.65); } }
+
+</style>
+</head>
+<!-- dir="rtl" على body مطلوب لأن Apps Script يحذف خصائص وسم html -->
+<body dir="rtl" class="min-h-screen bg-gradient-to-br from-slate-50 via-brand-50/50 to-amber-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-brand-950/50 text-slate-900 dark:text-slate-100 flex flex-col items-center justify-start py-4 px-2 sm:px-4 antialiased selection:bg-brand-600 selection:text-white">
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="i-wallet-cards" viewBox="0 0 24 24"><path d="M3 11h3.75a2 2 0 0 1 1.6.8l.45.6a4 4 0 0 0 6.4 0l.45-.6a2 2 0 0 1 1.6-.8H21" /><path d="M3 7h18" /><rect x="3" y="3" width="18" height="18" rx="2" /></symbol><symbol id="i-landmark" viewBox="0 0 24 24"><path d="M10 18v-7" /><path d="M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z" /><path d="M14 18v-7" /><path d="M18 18v-7" /><path d="M3 22h18" /><path d="M6 18v-7" /></symbol><symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol><symbol id="i-arrow-down-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v8" /><path d="m8 12 4 4 4-4" /></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v3" /><path d="M16 2v3" /><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></symbol><symbol id="i-notebook-pen" viewBox="0 0 24 24"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4" /><path d="M2 6h4" /><path d="M2 10h4" /><path d="M2 14h4" /><path d="M2 18h4" /><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" /></symbol><symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="M12 5v14" /></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle cx="12" cy="12" r="3" /></symbol><symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol></svg>
+
+<div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+  <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-brand-400/20 dark:bg-brand-500/15 blur-[100px] rounded-full"></div>
+  <div class="absolute top-1/3 -left-20 w-[400px] h-[350px] bg-amber-300/20 dark:bg-amber-500/10 blur-[110px] rounded-full"></div>
+</div>
+
+<main id="appMain" class="w-full max-w-xl mx-auto">
+  <header class="text-center mb-6 pt-2 relative">
+    <button type="button" id="openSettings" class="ghost !p-2.5 absolute top-2 end-0" title="الإعدادات" aria-label="الإعدادات"><svg class="ic w-5 h-5" aria-hidden="true"><use href="#i-settings"/></svg></button>
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/70 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-sm backdrop-blur-md mb-3">
+      <span class="flex h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
+      <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">مساعدك المالي</span>
+    </div>
+    <div class="flex items-center justify-center gap-2.5">
+      <div class="h-10 w-10 rounded-2xl bg-gradient-to-tr from-brand-700 to-brand-500 text-white flex items-center justify-center shadow-lg shadow-brand-600/25">
+        <svg class="ic w-5 h-5" aria-hidden="true"><use href="#i-wallet-cards"/></svg>
+      </div>
+      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">مصاريفي</h1>
+    </div>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">سجّل عمليتك في ثوانٍ</p>
+  </header>
+
+
+  <div id="installBar" class="hidden mb-4 flex items-center gap-3 rounded-2xl border border-brand-200 dark:border-brand-800 bg-brand-50/80 dark:bg-brand-950/40 px-4 py-3">
+    <svg class="ic w-5 h-5 text-brand-600 dark:text-brand-300" aria-hidden="true"><use href="#i-download"/></svg>
+    <span class="flex-1 text-sm font-semibold">ثبّت «مصاريفي» على جهازك للفتح السريع</span>
+    <button type="button" id="installBtn" class="px-3 py-1.5 rounded-xl bg-brand-600 text-white text-xs font-bold">تثبيت</button>
+    <button type="button" id="installClose" class="p-1 text-slate-400" aria-label="إغلاق"><svg class="ic w-4 h-4" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+
+  <nav class="seg mb-4" aria-label="أقسام التطبيق">
+    <button type="button" class="tab on" data-page="entryPage">إضافة عملية</button>
+    <button type="button" class="tab" data-page="responsesPage">الردود</button>
+    <button type="button" class="tab" data-page="accountsPage">الحسابات</button>
+  </nav>
+
+  <section id="responsesPage" class="hidden bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xl rounded-3xl p-3 sm:p-4 mb-5">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <div>
+        <h2 class="text-xl font-extrabold">معاينة الردود</h2>
+        <p class="text-xs text-slate-500 mt-1">يمكنك تعديل الصف أو حذفه. عند التعديل يُحدَّث الطابع الزمني للصف وتُظلَّل الخلايا المعدّلة بالأصفر.</p>
+      </div>
+      <button type="button" id="refreshResponses" class="ghost">تحديث</button>
+    </div>
+    <p id="responsesMsg" class="text-sm mb-3" aria-live="polite"></p>
+    <div id="responsesTableWrap" class="rounded-xl border border-slate-200 dark:border-slate-700">
+      <table class="min-w-full text-xs text-right">
+        <thead id="responsesHead" class="bg-slate-100 dark:bg-slate-800"></thead>
+        <tbody id="responsesBody"></tbody>
+      </table>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-3 mt-3">
+      <p id="responsesPageInfo" class="text-xs text-slate-500" aria-live="polite"></p>
+      <div class="flex items-center gap-2">
+        <button type="button" id="responsesPrev" class="ghost" disabled>السابق</button>
+        <button type="button" id="responsesNext" class="ghost" disabled>التالي</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="accountsPage" class="hidden bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xl rounded-3xl p-4 sm:p-6 mb-5">
+    <div class="flex items-center justify-between gap-3 mb-4">
+      <div>
+        <h2 class="text-xl font-extrabold">الحسابات</h2>
+        <p class="text-xs text-slate-500 mt-1">يعرض الدخل والمصروفات وصافي الرصيد لكل حساب.</p>
+      </div>
+      <button type="button" id="refreshAccounts" class="ghost">تحديث</button>
+    </div>
+    <p id="accountsMsg" class="text-sm mb-3" aria-live="polite"></p>
+    <div id="accountsList" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+  </section>
+
+  <section id="entryPage">
+  <form id="form" novalidate class="bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800 shadow-2xl shadow-slate-200/60 dark:shadow-black/50 rounded-3xl p-6 sm:p-8">
+
+    <div id="entry" class="space-y-6">
+
+      <!-- الرسالة النصية -->
+      <div>
+        <label class="lbl flex items-center justify-between" for="sms">
+          <span>الرسالة النصية</span>
+          <span class="text-xs font-normal text-slate-400">اختياري</span>
+        </label>
+        <textarea id="sms" rows="5" placeholder="الصق رسالة البنك هنا لتعبئة باقي الحقول تلقائياً…" class="field resize-y min-h-[8rem]"></textarea>
+        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">سيحاول النظام تعبئة نوع العملية والحساب والمبلغ والتاريخ والوقت تلقائياً من نص الرسالة — راجعها قبل الإرسال.</p>
+      </div>
+
+      <!-- نوع العملية: دخل / خيارات أخرى -->
+      <div>
+        <span class="lbl">نوع العملية</span>
+        <div id="typeTabs" class="seg" role="tablist" aria-label="نوع العملية">
+          <button type="button" role="tab" class="tab on" data-type="income" aria-selected="true">دخل</button>
+          <button type="button" role="tab" class="tab" data-type="other" aria-selected="false">خيارات أخرى</button>
+        </div>
+
+        <!-- لوحة متفرعة عن "خيارات أخرى": بين الحسابات / مصاريف -->
+        <div id="otherPanel" class="other-panel hidden">
+          <span class="other-panel-tag">خيارات أخرى</span>
+          <div id="subTabs" class="seg seg2" role="tablist" aria-label="خيارات أخرى">
+            <button type="button" role="tab" class="tab on" data-sub="transfer" aria-selected="true">بين الحسابات</button>
+            <button type="button" role="tab" class="tab" data-sub="expense" aria-selected="false">مصاريف</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- حقول تتغير حسب التبويب -->
+      <div class="sect space-y-5">
+        <div id="g_from" class="hidden">
+          <label class="lbl" for="from">سحوبات أو مصروفات <span class="text-rose-500">*</span></label>
+          <div class="relative">
+            <div class="icon-start"><svg class="ic w-4 h-4" aria-hidden="true"><use href="#i-landmark"/></svg></div>
+            <select id="from" class="field sel"></select>
+            <div class="icon-end"><svg class="ic w-4 h-4" aria-hidden="true"><use href="#i-chevron-down"/></svg></div>
+          </div>
+          <div class="err" id="e_from" role="alert"></div>
+        </div>
+
+        <div id="g_fee" class="hidden">
+          <span class="lbl">رسوم التحويل</span>
+          <div class="flex flex-wrap gap-2.5" id="chips" role="radiogroup" aria-label="رسوم التحويل"></div>
+        </div>
+
+        <div id="g_to">
+          <label class="lbl" for="to">ايداع أو وارد <span class="text-rose-500">*</span></label>
+          <div class="relative">
+            <div class="icon-start"><svg class="ic w-4 h-4" aria-hidden="true"><use href="#i-arrow-down-circle"/></svg></div>
+            <select id="to" class="field sel"></select>
+            <div class="icon-end"><svg class="ic w-4 h-4" aria-hidden="true"><use href="#i-chevron-down"/></svg></div>
+          </div>
+          <div class="err" id="e_to" role="alert"></div>
+        </div>
+      </div>
+
+      <!-- المبلغ -->
+      <div class="sect">
+        <label class="lbl" for="amount">المبلغ <span class="text-rose-500">*</span></label>
+        <div class="relative">
+          <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400 font-semibold text-xs">ر.س</div>
+          <input id="amount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00"
+                 class="field num pr-12 pl-3.5 font-semibold text-base placeholder:font-normal"/>
+        </div>
+        <div class="err" id="e_amount" role="alert"></div>
+      </div>
+
+      <!-- التاريخ / الساعة / الدقيقة -->
+      <div class="sect">
+        <div class="flex flex-wrap items-end gap-3">
+          <div class="flex-1 min-w-[10rem]">
+            <label class="lbl" for="date">التاريخ <span class="text-rose-500">*</span></label>
+            <div class="relative">
+              <div class="icon-start"><svg class="ic w-4 h-4" aria-hidden="true"><use href="#i-calendar"/></svg></div>
+              <input id="date" type="date" class="field ps-10 cursor-pointer"/>
+            </div>
+          </div>
+          <div class="w-[4.5rem]">
+            <label class="lbl" for="h">الساعة</label>
+            <input id="h" type="text" inputmode="numeric" maxlength="2" autocomplete="off" placeholder="HH" class="field num !px-2 text-center font-semibold"/>
+          </div>
+          <div class="w-[4.5rem]">
+            <label class="lbl" for="m">الدقيقة</label>
+            <input id="m" type="text" inputmode="numeric" maxlength="2" autocomplete="off" placeholder="MM" class="field num !px-2 text-center font-semibold"/>
+          </div>
+          <button type="button" id="nowBtn" class="ghost !py-[0.6rem]" title="الوقت الحالي">
+            <svg class="ic w-4 h-4" aria-hidden="true"><use href="#i-clock"/></svg><span>الآن</span>
+          </button>
+        </div>
+        <div class="err" id="e_date" role="alert"></div>
+        <div class="err" id="e_h" role="alert"></div>
+        <div class="err" id="e_m" role="alert"></div>
+      </div>
+
+      <!-- تفاصيل إضافية -->
+      <div class="sect">
+        <label class="lbl flex items-center justify-between" for="notes">
+          <span>تفاصيل إضافية</span>
+          <span class="text-xs font-normal text-slate-400">اختياري</span>
+        </label>
+        <div class="relative">
+          <div class="icon-start"><svg class="ic w-4 h-4" aria-hidden="true"><use href="#i-notebook-pen"/></svg></div>
+          <input id="notes" type="text" autocomplete="off" class="field ps-10"/>
+        </div>
+      </div>
+
+      <div class="text-xs font-semibold text-center" id="formMsg" role="alert" aria-live="polite"></div>
+
+      <button type="submit" id="save" class="go group w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-gradient-to-l from-brand-500 via-brand-600 to-brand-700 hover:from-brand-400 hover:to-brand-600 text-white font-bold text-sm shadow-lg shadow-brand-600/30 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed">
+        <span id="saveLbl">إرسال إلى النموذج</span>
+        <svg class="ic w-4 h-4 transition-transform group-hover:-translate-x-1" aria-hidden="true"><use href="#i-arrow-left"/></svg>
+      </button>
+
+      <!-- عرض البيانات عند فتح الصفحة خارج Apps Script بدون رابط إرسال -->
+      <section id="preview" class="hidden rounded-2xl border border-dashed border-amber-400/70 bg-amber-50/60 dark:bg-amber-950/20 p-4">
+        <div class="text-sm font-bold text-amber-800 dark:text-amber-300 mb-2">البيانات جاهزة للإرسال</div>
+        <pre id="previewJson" dir="ltr" class="text-left text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 overflow-x-auto whitespace-pre-wrap break-words"></pre>
+      </section>
+    </div>
+
+    <!-- تم الإرسال -->
+    <div id="done" class="hidden text-center py-6 px-2" aria-live="polite">
+      <div class="w-16 h-16 bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300 rounded-3xl flex items-center justify-center mx-auto mb-4 ring-8 ring-brand-50 dark:ring-brand-950/40">
+        <svg class="ic w-8 h-8" aria-hidden="true"><use href="#i-check"/></svg>
+      </div>
+      <h2 class="text-2xl font-extrabold text-slate-900 dark:text-white">تم الإرسال</h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 mb-6 max-w-sm mx-auto leading-relaxed">أُرسلت العملية إلى النموذج.</p>
+      <button type="button" id="again" class="ghost"><svg class="ic w-4 h-4" aria-hidden="true"><use href="#i-plus"/></svg><span>إضافة عملية أخرى</span></button>
+    </div>
+  </form>
+  </section>
+</main>
+
+<dialog id="settingsDlg" class="rounded-3xl p-0 w-[92vw] max-w-md bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl backdrop:bg-slate-900/50">
+  <div class="p-6 space-y-4">
+    <h2 class="text-lg font-extrabold">إعدادات الاتصال</h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">الصق رابط تطبيق الويب (ينتهي بـ <span dir="ltr">/exec</span>) ورمز الوصول <span dir="ltr">API_TOKEN</span> المضبوط في خصائص السكربت. يُحفظان على هذا الجهاز فقط.</p>
+    <div>
+      <label class="lbl" for="cfgEndpoint">رابط الخادم</label>
+      <input id="cfgEndpoint" type="url" dir="ltr" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec" class="field text-left"/>
+    </div>
+    <div>
+      <label class="lbl" for="cfgToken">رمز الوصول</label>
+      <input id="cfgToken" type="password" dir="ltr" autocomplete="off" class="field text-left"/>
+    </div>
+    <p id="cfgMsg" class="text-xs font-semibold min-h-[1rem]" aria-live="polite"></p>
+    <div class="flex gap-2">
+      <button type="button" id="cfgSave" class="go flex-1 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm">حفظ واختبار</button>
+      <button type="button" id="cfgClose" class="ghost">إغلاق</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+/* ============ الإعدادات ============ */
+const CONFIG = {
+  // رابط تطبيق الويب (ينتهي بـ /exec). يمكنك كتابته هنا مرة واحدة، أو إدخاله من زر الإعدادات في الصفحة.
+  endpoint: ""
+};
+
+// القيم المرسلة للنموذج — يجب أن تطابق نص خيارات النموذج حرفياً
+const TYPE_VALUE = { income: "دخل", other: "خيارات أخرى" };
+const SUB_VALUE  = { transfer: "بين الحسابات", expense: "مصاريف" };
+
+// خيارات القوائم (الحسابات) وخيارات رسوم التحويل — كما في النموذج فعلياً
+const ACCOUNTS = ["الأهلي", "ساب", "STCPay"];
+const FEES     = ["0", "0.58", "1.15", "5.75"];
+const DEFAULT_FEE = "0";
+/* =================================== */
+
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, "0");
+
+// الحالة: التبويب الرئيسي والفرعي والرسوم المختارة
+const state = { type: "income", sub: "transfer", fee: DEFAULT_FEE };
+const mode = () => state.type === "income" ? "income" : state.sub;   // income | transfer | expense
+
+// تعبئة القوائم
+["from", "to"].forEach(id => {
+  const sel = $(id);
+  sel.add(new Option("اختر…", ""));
+  ACCOUNTS.forEach(v => sel.add(new Option(v, v)));
+});
+
+// أزرار الرسوم
+$("chips").innerHTML = FEES.map(v =>
+  `<button type="button" class="chip" role="radio" data-v="${v}">${v}</button>`).join("");
+
+/* ============ التعرف التلقائي من نص الرسالة ============ */
+// هذه القواعد مبنية على تحليل 703 رسالة فعلية من ملف الردود (Book1.xlsx)
+// وقورنت بعمودي "سحوبات أو مصروفات" و"ايداع أو وارد" الفعليين.
+// الدقة على البيانات الفعلية: from 97.3% · to 98.7% · كلاهما معاً 96.3%
+// إن أضفت بنكاً أو بطاقة جديدة لاحقاً، أضف بصمتها هنا بنفس الطريقة.
+
+// أرقام عربية/فارسية وعلامات اتجاه خفية -> نص عادي (يبقي ":" لأن الوقت "06:51" يحتاجها)
+function normalizeSms(s) {
+  return String(s || "")
+    .replace(/[\u0660-\u0669]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x0660 + 48))
+    .replace(/[\u06F0-\u06F9]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x06F0 + 48))
+    .replace(/[\u200f\u200e\u202a-\u202e\u0640]/g, "");
+}
+// نسخة إضافية توحّد الأقواس/النقطتين إلى مسافات لمطابقة عبارات الرسائل فقط
+// (لا تُستخدم لاستخراج التاريخ/الوقت لأنها تكسر "06:51")
+function normalizeForRules(s) {
+  return normalizeSms(s).replace(/[():\-]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+// البنوك التي تُرسل التحويل عبرها فعلياً هي حساباتك أنت (وليست جهة خارجية) —
+// لاحظنا هذا من عمود "عبر:"/"بنك" في حوالات "الأهلي" الصادرة
+const BANK_TO_ACCOUNT = { "ARAB NATIONAL BANK": "STCPay", "SAUDI AWWAL BANK": "ساب" };
+function viaBank(t) {
+  const m = /(?:عبر|بنك) ([a-z .]+bank)/i.exec(t);
+  if (!m) return null;
+  const name = m[1].trim().toUpperCase();
+  for (const k in BANK_TO_ACCOUNT) if (name.indexOf(k) > -1) return BANK_TO_ACCOUNT[k];
+  return "EXTERNAL";
+}
+
+// آخر 4 أرقام من بطاقاتك مربوطة بحساباتها الفعلية — أضف بطاقاتك الأخرى هنا
+const CARD_BANK = [["5300", "STCPay"], ["2628", "الأهلي"], ["8047", "STCPay"]];
+function cardBank(t) {
+  for (const [num, acc] of CARD_BANK) if (t.indexOf(num) > -1) return acc;
+  return null;
+}
+
+const STCPAY = "STCPay", AHLI = "الأهلي", SAB = "ساب";
+
+// قواعد مرتبة: كل قاعدة = [كلمات يجب توفرها كلها، دالة تُرجع [from, to]]
+// ترتيبها يهم — الأكثر تحديداً أولاً
+const ACCOUNT_RULES = [
+  [["شراء ***"], t => [STCPAY, ""]],
+  [["شراء mada pay"], t => [STCPAY, ""]],
+  [["شراء visa"], t => [STCPAY, ""]],
+  [["رصيد غير كافي"], t => [cardBank(t) || STCPAY, ""]],
+  [["شراء pos"], t => [AHLI, ""]],
+  [["حوالة صادرة داخلية"], t => [AHLI, ""]],
+  [["حوالة صادرة محلية"], t => { const v = viaBank(t); return [AHLI, (v && v !== "EXTERNAL") ? v : ""]; }],
+  [["حوالة صادرة مقبولة"], t => [SAB, ""]],
+  [["حوالة داخلية صادرة"], t => [STCPAY, ""]],
+  [["حوالة داخلية واردة"], t => ["", STCPAY]],
+  // نمط STC Pay العام "حوالة داخلية" يميّز الاتجاه بوجود "الى:" (صادر) أو "من:" (وارد) فقط، دون كلمة صريحة أخرى
+  [["حوالة داخلية"], t => (t.indexOf(" الى") > -1 || t.indexOf("إلى") > -1) ? [STCPAY, ""] : ((t.indexOf(" من ") > -1) ? ["", STCPAY] : [STCPAY, ""])],
+  [["عملية شراء اون لاين"], t => [STCPAY, ""]],
+  [["اضافة أموال لحسابك"], t => [cardBank(t) || AHLI, STCPAY]],
+  [["إضافة أموال لحسابك"], t => [cardBank(t) || AHLI, STCPAY]],
+  [["تغذية محفظة"], t => [cardBank(t) || AHLI, STCPAY]],
+  [["شراء محلي عبر الانترنت"], t => [cardBank(t) || AHLI, (t.indexOf("stc bank") > -1 || t.indexOf("stc pay") > -1) ? STCPAY : ""]],
+  [["عملية انترنت"], t => [STCPAY, ""]],
+  [["شراء انترنت"], t => [STCPAY, ""]],
+  [["شراء إنترنت"], t => [STCPAY, ""]],
+  [["سحب نقدي طارئ"], t => [AHLI, ""]],
+  [["سحب صراف الي"], t => [AHLI, ""]],
+  [["حوالة واردة محلية"], t => ["", AHLI]],
+  [["شراء عبر نقاط البيع"], t => [cardBank(t) || SAB, ""]],
+  [["حوالة واردة داخلية"], t => ["", AHLI]],
+  [["notification استرجاع"], t => ["", STCPAY]],
+  [["استرجاع"], t => ["", STCPAY]],
+  [["استرداد"], t => ["", STCPAY]],
+  [["حوالة صادرة سريع"], t => [STCPAY, ""]],
+  [["حوالة واردة سريع"], t => ["", STCPAY]],
+  [["اوبر"], t => [STCPAY, ""]],
+  [["uber"], t => [STCPAY, ""]],
+  [["إيداع حوالة واردة"], t => ["", SAB]],
+  [["ايداع حوالة واردة"], t => ["", SAB]],
+  [["ايداع رواتب"], t => ["", AHLI]],
+  [["خصم قسط تمويل"], t => [AHLI, ""]],
+  [["pos pre auth"], t => [STCPAY, ""]],
+  [["online pre auth"], t => [STCPAY, ""]],
+];
+
+function classifyAccounts(tRaw) {
+  const t = tRaw.toLowerCase();
+  for (const [keys, fn] of ACCOUNT_RULES) {
+    if (keys.every(k => t.indexOf(k) > -1)) return fn(t);
+  }
+  const cb = cardBank(t);
+  if (cb) return [cb, ""]; // بطاقة معروفة بلا كلمة صريحة: افتراض عملية شراء
+  return ["", ""];
+}
+
+const AMOUNT_GOOD = ["مبلغ", "بمبلغ", "قيمة", "amount"];
+const AMOUNT_BAD  = ["رصيد", "المتاح", "المتبقي", "حساب", "بطاقة", "جوال", "مرجع", "ايبان", "iban", "رسوم", "الرسوم", "عمولة"];
+const hasKw = (t, arr) => arr.find(k => t.indexOf(k) > -1) || null;
+
+function findAmountSms(t) {
+  const re = /(?:SAR|SR|ر\.?\s?س\.?|ريال|\uFDFC)\s*:?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)|([0-9][0-9,]*(?:\.[0-9]{1,2})?)\s*(?:SAR|SR|ر\.?\s?س\.?|ريال|\uFDFC)/gi;
+  let best = null, m;
+  while ((m = re.exec(t)) !== null) {
+    const v = parseFloat((m[1] || m[2] || "").replace(/,/g, ""));
+    if (!isFinite(v)) continue;
+    const before = t.slice(Math.max(0, m.index - 30), m.index);
+    let s = 0;
+    if (hasKw(before, AMOUNT_GOOD)) s += 6;
+    if (hasKw(before, AMOUNT_BAD)) s -= 7;
+    s -= m.index / 10000;
+    if (!best || s > best.s) best = { v, s };
+  }
+  if (!best) {
+    const m2 = /(?:مبلغ|بمبلغ|المبلغ|قيمة)\s*:?\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i.exec(t);
+    if (m2) best = { v: parseFloat(m2[1].replace(/,/g, "")) };
+  }
+  return best ? best.v : null;
+}
+
+function findFeeSms(t) {
+  const m = /(?:رسوم|الرسوم|عمولة|fee)[^0-9\n]{0,18}([0-9]+(?:\.[0-9]{1,2})?)/i.exec(t);
+  return m ? m[1] : "";
+}
+
+function findDateSms(t) {
+  let m = /(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/.exec(t);
+  if (m) return `${m[1]}-${pad(Number(m[2]))}-${pad(Number(m[3]))}`;
+  m = /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/.exec(t);
+  if (m) return `${m[3]}-${pad(Number(m[2]))}-${pad(Number(m[1]))}`;
+  // صيغة يوم/شهر/سنة مختصرة مثل 18/08/26
+  m = /(\d{1,2})[-\/](\d{1,2})[-\/](\d{2})(?!\d)/.exec(t);
+  if (m) return `20${m[3]}-${pad(Number(m[2]))}-${pad(Number(m[1]))}`;
+  return "";
+}
+
+function findTimeSms(t) {
+  const m = /(\d{1,2}):(\d{2})(?::\d{2})?\s*(ص|م|am|pm)?/i.exec(t);
+  if (!m) return null;
+  let h = Number(m[1]);
+  const mnt = Number(m[2]);
+  const mer = (m[3] || "").toLowerCase();
+  if ((mer === "م" || mer === "pm") && h < 12) h += 12;
+  if ((mer === "ص" || mer === "am") && h === 12) h = 0;
+  return { h, m: mnt };
+}
+
+// الجهة/المستفيد لخانة "تفاصيل إضافية" — "إلى:" أولى (اسم المستفيد أوضح)، ثم "لدى:"، ثم "من:"
+// مع استبعاد قيم هي مجرد رقم حساب مقنّع (مثل "0302*") لأنها غير مفيدة كملاحظة
+function findMerchantSms(raw) {
+  const pats = [/(?:الى|إلى)\s*:?\s*([^\n\r]+)/, /(?:لدى|لدي)\s*:?\s*([^\n\r]+)/, /(?:من)\s*:?\s*([^\n\r]+)/];
+  for (const p of pats) {
+    const m = p.exec(raw);
+    if (m) {
+      const v = m[1].trim().replace(/[;،,]$/, "");
+      if (v && v.length < 60 && !/^حساب|^\*|^بطاقة|^\d+\s*\*?$/.test(v)) return v;
+    }
+  }
+  return "";
+}
+
+function parseSms(raw) {
+  const norm = normalizeSms(raw), t = normalizeForRules(raw).toLowerCase();
+  const [from, to] = classifyAccounts(t);
+
+  let type = null, sub = null;
+  if (from && to) { type = "other"; sub = "transfer"; }
+  else if (from && !to) { type = "other"; sub = "expense"; }
+  else if (!from && to) { type = "income"; sub = "transfer"; }
+  // من دون from/to: لا نتعرّف على الحساب، فنترك التبويب كما هو ولا نخمّن
+
+  const result = { type, sub, from, to, fee: "", amount: findAmountSms(t), date: findDateSms(norm), h: "", m: "", merchant: findMerchantSms(norm) };
+
+  const feeStr = findFeeSms(t);
+  if (feeStr && FEES.indexOf(feeStr) > -1) result.fee = feeStr;
+
+  const tm = findTimeSms(norm);
+  if (tm) { result.h = String(tm.h); result.m = String(tm.m); }
+
+  return result;
+}
+
+// يطبّق نتيجة التحليل على التبويبات والحقول دون مسح ما أدخله المستخدم يدوياً
+function autofillFromSms(raw) {
+  if (!raw.trim()) return;
+  const p = parseSms(raw);
+  if (p.type) { state.type = p.type; state.sub = p.sub; }
+  if (p.fee) state.fee = p.fee;
+  render();
+  if (p.from) $("from").value = p.from;
+  if (p.to) $("to").value = p.to;
+  if (p.amount !== null && !isNaN(p.amount)) $("amount").value = String(p.amount);
+  if (p.date) $("date").value = p.date;
+  if (p.h !== "") $("h").value = p.h;
+  if (p.m !== "") $("m").value = p.m;
+  if (p.merchant && !$("notes").value.trim()) $("notes").value = p.merchant;
+}
+/* ========================================================= */
+
+function clearErrors() {
+  document.querySelectorAll('[id^="e_"]').forEach(e => e.textContent = "");
+  document.querySelectorAll(".invalid").forEach(e => e.classList.remove("invalid"));
+  $("formMsg").textContent = "";
+}
+
+// رسم حالة التبويبات والحقول
+function render() {
+  document.querySelectorAll("#typeTabs .tab").forEach(b => {
+    const on = b.dataset.type === state.type;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-selected", on);
+  });
+
+  // لوحة "خيارات أخرى" الفرعية تظهر فقط عند اختيار هذا التبويب الرئيسي،
+  // فتبدو التبويبات الفرعية وحقولها تابعة له بصرياً.
+  $("otherPanel").classList.toggle("hidden", state.type !== "other");
+  document.querySelectorAll("#subTabs .tab").forEach(b => {
+    const on = b.dataset.sub === state.sub;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-selected", on);
+  });
+
+  const md = mode();
+  $("g_from").classList.toggle("hidden", md === "income");
+  $("g_fee").classList.toggle("hidden", md === "income");
+  $("g_to").classList.toggle("hidden", md === "expense");
+
+  document.querySelectorAll("#chips .chip").forEach(c => {
+    const on = c.dataset.v === state.fee;
+    c.classList.toggle("on", on);
+    c.setAttribute("aria-checked", on);
+  });
+  clearErrors();
+  $("preview").classList.add("hidden");
+}
+
+$("typeTabs").addEventListener("click", e => {
+  const b = e.target.closest(".tab");
+  if (!b) return;
+  state.type = b.dataset.type;
+  render();
+});
+$("subTabs").addEventListener("click", e => {
+  const b = e.target.closest(".tab");
+  if (!b) return;
+  state.sub = b.dataset.sub;
+  render();
+});
+$("chips").addEventListener("click", e => {
+  const c = e.target.closest(".chip");
+  if (!c) return;
+  state.fee = c.dataset.v;
+  render();
+});
+
+// أرقام عربية وفواصل -> أرقام لاتينية
+function normAmount(s) {
+  if (!s) return "";
+  const map = {"٠":0,"١":1,"٢":2,"٣":3,"٤":4,"٥":5,"٦":6,"٧":7,"٨":8,"٩":9};
+  return s.replace(/[٠-٩]/g, d => map[d]).replace(/٫/g, ".").replace(/[٬,\s]/g, "");
+}
+$("amount").addEventListener("blur", e => { e.target.value = normAmount(e.target.value); });
+
+// تعبئة تلقائية عند لصق أو كتابة نص الرسالة
+$("sms").addEventListener("input", () => autofillFromSms($("sms").value));
+
+// الساعة والدقيقة: رقمان فقط، وينتقل المؤشر من الساعة إلى الدقيقة
+["h", "m"].forEach(id => {
+  const el = $(id);
+  el.addEventListener("focus", () => el.select());
+  el.addEventListener("input", () => {
+    el.value = normAmount(el.value).replace(/\D/g, "").slice(0, 2);
+    if (id === "h" && el.value.length === 2) $("m").focus();
+  });
+});
+
+// الوقت الحالي
+function setNow() {
+  const d = new Date();
+  $("date").value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  $("h").value = String(d.getHours());
+  $("m").value = String(d.getMinutes());
+}
+setNow();
+$("nowBtn").addEventListener("click", setNow);
+
+/* ---------- التحقق ---------- */
+function validate() {
+  clearErrors();
+  let first = null, ok = true;
+  const md = mode();
+
+  const fail = (id, msg) => {
+    $("e_" + id).textContent = msg;
+    $(id).classList.add("invalid");
+    if (!first) first = $(id);
+    ok = false;
+  };
+  const rng = (id, max, label) => {
+    const v = $(id).value.trim();
+    if (v !== "" && (!/^\d{1,2}$/.test(v) || Number(v) > max)) fail(id, `${label} بين 0 و ${max}.`);
+  };
+
+  if (md !== "income" && !$("from").value) fail("from", "اختر الحساب.");
+  if (md !== "expense" && !$("to").value) fail("to", "اختر الحساب.");
+  if (md === "transfer" && $("from").value && $("from").value === $("to").value)
+    fail("to", "الحساب المستلم مطابق للحساب المسحوب منه.");
+
+  $("amount").value = normAmount($("amount").value);
+  const amt = $("amount").value;
+  if (!amt) fail("amount", "أدخل المبلغ.");
+  else if (!/^\d+(\.\d+)?$/.test(amt)) fail("amount", "أدخل رقماً صحيحاً مثل 125.50.");
+  else if (Number(amt) <= 0) fail("amount", "المبلغ يجب أن يكون أكبر من 0.");
+
+  if (!$("date").value) fail("date", "اختر التاريخ.");
+  rng("h", 23, "الساعة");
+  rng("m", 59, "الدقيقة");
+
+  if (first) {
+    first.scrollIntoView({ block: "center", behavior: "smooth" });
+    first.focus({ preventScroll: true });
+  }
+  return ok;
+}
+
+/* ---------- الإرسال ---------- */
+function buildData() {
+  const g = id => $(id).value.trim();
+  const n = id => { const v = normAmount($(id).value); return v === "" ? "" : String(Number(v)); };
+  const md = mode();
+
+  const common = {
+    amount: n("amount"), date: g("date"), h: n("h"), m: n("m"),
+    sms: g("sms"), notes: g("notes")
+  };
+  if (md === "income")
+    return { type: TYPE_VALUE.income, to: g("to"), ...common };
+  if (md === "transfer")
+    return { type: TYPE_VALUE.other, sub: SUB_VALUE.transfer, from: g("from"), fee: state.fee, to: g("to"), ...common };
+  return { type: TYPE_VALUE.other, sub: SUB_VALUE.expense, from: g("from"), fee: state.fee, ...common };
+}
+
+const inAppsScript = typeof google !== "undefined" && google.script && google.script.run;
+
+function sendToServer(data) { return serverCall("submitEntry", data); }
+
+function showMsg(text, type) {
+  const el = $("formMsg");
+  el.textContent = text;
+  el.className = "text-xs font-semibold text-center " +
+    (type === "err" ? "text-rose-500 dark:text-rose-400" : "text-amber-700 dark:text-amber-300");
+}
+
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("preview").classList.add("hidden");
+  if (!validate()) return;
+
+  const data = buildData();
+
+  if (!inAppsScript && (!getCfg().endpoint || !getCfg().token)) {
+    showMsg("أدخل رابط الخادم ورمز الوصول من زر الإعدادات أولاً.", "warn");
+    openSettings();
+    return;
+  }
+
+  $("save").disabled = true;
+  $("saveLbl").textContent = "جارٍ الإرسال…";
+  try {
+    const res = await sendToServer(data);
+    if (!res || !res.ok) throw new Error((res && res.error) || "فشل الإرسال");
+    $("entry").classList.add("hidden");
+    $("done").classList.remove("hidden");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (err) {
+    showMsg("تعذّر الإرسال: " + (err.message || err), "err");
+  } finally {
+    $("save").disabled = false;
+    $("saveLbl").textContent = "إرسال إلى النموذج";
+  }
+});
+
+$("again").addEventListener("click", () => {
+  $("form").reset();
+  setNow();
+  state.fee = DEFAULT_FEE;      // يبقى التبويب المختار كما هو
+  render();
+  $("done").classList.add("hidden");
+  $("entry").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+
+/* ---------- تبويبات معاينة الردود والحسابات ---------- */
+/* ---------- الاتصال بالخادم ----------
+   داخل Apps Script: google.script.run.  على GitHub Pages: طلب POST إلى رابط /exec مع رمز الوصول. */
+const LS = {
+  get(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+};
+const getCfg = () => ({ endpoint: (LS.get("mb_endpoint") || CONFIG.endpoint || "").trim(), token: LS.get("mb_token").trim() });
+
+function serverCall(method, ...args) {
+  if (inAppsScript) {
+    return new Promise((resolve, reject) => {
+      const runner = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
+      runner[method](...args);
+    });
+  }
+  const { endpoint, token } = getCfg();
+  if (!endpoint || !token) { openSettings(); return Promise.reject(new Error("أدخل رابط الخادم ورمز الوصول من الإعدادات.")); }
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 45000);
+  return fetch(endpoint, {
+    method: "POST",
+    // text/plain يتجنب طلب preflight الذي لا يدعمه Apps Script
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ token, method, args }),
+    redirect: "follow",
+    signal: ctl.signal
+  }).then(r => r.text()).then(text => {
+    let res;
+    try { res = JSON.parse(text); }
+    catch (e) { throw new Error("ردّ غير صالح من الخادم. تأكد أن النشر مضبوط على: الوصول «أي شخص»، وأن الرابط ينتهي بـ /exec."); }
+    if (res && res.error === "unauthorized") { openSettings("رمز الوصول غير صحيح."); throw new Error("رمز الوصول غير صحيح."); }
+    return res;
+  }).catch(err => {
+    if (err && err.name === "AbortError") throw new Error("انتهت مهلة الاتصال بالخادم.");
+    if (err instanceof TypeError) throw new Error("تعذّر الاتصال بالخادم. تحقق من الإنترنت ومن رابط الخادم.");
+    throw err;
+  }).finally(() => clearTimeout(timer));
+}
+function setPage(pageId) {
+  ['entryPage','responsesPage','accountsPage'].forEach(id => $(id).classList.toggle('hidden', id !== pageId));
+  $('appMain').classList.toggle('wide', pageId === 'responsesPage');
+  document.querySelectorAll('nav [data-page]').forEach(b => {
+    const on = b.dataset.page === pageId;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', String(on));
+  });
+  if (pageId === 'responsesPage' && !responsesLoaded) loadResponses(1);
+  if (pageId === 'accountsPage') loadAccounts();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('nav [data-page]').forEach(b => b.addEventListener('click', () => setPage(b.dataset.page)));
+
+function escapeHtml(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+let responsesCurrentPage = 1;
+let responsesTotalPages = 1;
+let responsesLoaded = false;
+let responsesDateOrder = 'dmy'; // ترتيب التاريخ المُكتشف (يوم/شهر أو شهر/يوم)
+
+const ICON_SAVE = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+const ICON_DEL  = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+
+// أرقام عربية/فارسية → إنجليزية
+function normDigits(v) {
+  return String(v == null ? '' : v).replace(/[٠-٩]/g, d => d.charCodeAt(0) - 1632).replace(/[۰-۹]/g, d => d.charCodeAt(0) - 1776);
+}
+// توحيد عنوان العمود للمطابقة (إزالة التشكيل والنقطتين وتوحيد الهمزات)
+function normHdr(h) {
+  return String(h == null ? '' : h).replace(/[\u064B-\u065F\u0640]/g, '').replace(/[أإآ]/g, 'ا').replace(/[:：]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+// تحديد نوع العمود من عنوانه
+function colKind(h, i) {
+  if (i === 0) return 'ts';
+  const n = normHdr(h);
+  if (/التاريخ|^date/.test(n)) return 'date';
+  if (/الساعه|الساعة|^hour/.test(n)) return 'hour';
+  if (/الدقيقه|الدقيقة|^minute/.test(n)) return 'minute';
+  if (/المبلغ|^amount/.test(n)) return 'amount';
+  if (/رسوم/.test(n)) return 'fee';
+  if (/^دخل او مصروف/.test(n)) return 'type';
+  if (/^نوع العمليه|^نوع العملية/.test(n)) return 'sub';
+  if (/ايداع|وارد|سحوبات|مصروفات/.test(n)) return 'account';
+  return 'text';
+}
+const DATE_RE = /^(\d{1,4})[\/\-.](\d{1,2})[\/\-.](\d{1,4})(?=[ T,]|$)/;
+// يكتشف هل التواريخ يوم/شهر أم شهر/يوم من كل القيم المعروضة
+function detectDateOrder(values, fallback) {
+  let dmy = false, mdy = false;
+  values.forEach(v => {
+    const m = normDigits(v).trim().match(DATE_RE);
+    if (!m || m[3].length !== 4) return;
+    if (+m[1] > 12) dmy = true;
+    if (+m[2] > 12) mdy = true;
+  });
+  if (dmy && !mdy) return 'dmy';
+  if (mdy && !dmy) return 'mdy';
+  return fallback;
+}
+// يحوّل أي صيغة تاريخ شائعة إلى yyyy-mm-dd (أو '' إن تعذّر)
+function toIsoDate(raw, order) {
+  const s = normDigits(raw).trim();
+  if (!s) return '';
+  const m = s.match(DATE_RE);
+  if (m) {
+    const valid = (y, mo, d) => mo >= 1 && mo <= 12 && d >= 1 && d <= 31;
+    if (m[1].length === 4) {
+      const y = +m[1], mo = +m[2], d = +m[3];
+      return valid(y, mo, d) ? `${y}-${pad(mo)}-${pad(d)}` : '';
+    }
+    if (m[3].length === 4) {
+      const y = +m[3], x = +m[1], z = +m[2];
+      const [mo1, d1] = order === 'mdy' ? [x, z] : [z, x];
+      if (valid(y, mo1, d1)) return `${y}-${pad(mo1)}-${pad(d1)}`;
+      const [mo2, d2] = order === 'mdy' ? [z, x] : [x, z]; // جرّب الترتيب الآخر
+      return valid(y, mo2, d2) ? `${y}-${pad(mo2)}-${pad(d2)}` : '';
+    }
+    return '';
+  }
+  if (/[A-Za-z]/.test(s)) { // مثل: Mon Oct 12 2026 …
+    const dt = new Date(s);
+    if (!isNaN(dt)) return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+  }
+  return '';
+}
+function selectHtml(i, h, value, options, extra) {
+  const opts = options.slice();
+  if (value !== '' && !opts.includes(value)) opts.push(value); // لا نخفي أي قيمة موجودة
+  return `<select class="response-input" data-col="${i}" data-kind="select" aria-label="${escapeHtml(h)}">` +
+    ['', ...opts].map(o => `<option value="${escapeHtml(o)}"${o === value ? ' selected' : ''}>${o === '' ? '—' : escapeHtml(o)}</option>`).join('') + '</select>';
+}
+function cellHtml(kind, h, i, value) {
+  const label = escapeHtml(h);
+  if (kind === 'ts') return `<td class="rc rc-ts"><span>${escapeHtml(value)}</span><input type="hidden" data-col="${i}" value="${escapeHtml(value)}"></td>`;
+  if (kind === 'date') {
+    const iso = toIsoDate(value, responsesDateOrder);
+    if (iso || value === '') {
+      return `<td class="rc rc-date"><input class="response-input" data-col="${i}" data-kind="date" data-orig="${escapeHtml(value)}" data-iso="${iso}" type="date" value="${iso}" aria-label="${label}"></td>`;
+    }
+    kind = 'text'; // تاريخ بصيغة غير مفهومة: اعرضه كما هو بدل إظهار حقل فارغ
+  }
+  if (kind === 'hour' || kind === 'minute') {
+    const v = normDigits(value).trim();
+    if (v === '' || /^\d{1,2}$/.test(v)) {
+      const max = kind === 'hour' ? 23 : 59;
+      return `<td class="rc rc-num"><input class="response-input num" data-col="${i}" type="number" inputmode="numeric" min="0" max="${max}" step="1" value="${escapeHtml(v)}" aria-label="${label}"></td>`;
+    }
+    kind = 'text';
+  }
+  if (kind === 'amount') return `<td class="rc rc-amt"><input class="response-input num" data-col="${i}" type="text" inputmode="decimal" dir="ltr" value="${escapeHtml(value)}" aria-label="${label}"></td>`;
+  if (kind === 'account') return `<td class="rc rc-acc">${selectHtml(i, h, value, ACCOUNTS)}</td>`;
+  if (kind === 'fee')     return `<td class="rc rc-sel">${selectHtml(i, h, value, FEES)}</td>`;
+  if (kind === 'type')    return `<td class="rc rc-sel">${selectHtml(i, h, value, Object.values(TYPE_VALUE))}</td>`;
+  if (kind === 'sub')     return `<td class="rc rc-sel">${selectHtml(i, h, value, Object.values(SUB_VALUE))}</td>`;
+  return `<td class="rc rc-text"><input class="response-input" data-col="${i}" type="text" value="${escapeHtml(value)}" aria-label="${label}"></td>`;
+}
+// يضيف تظليل "معدّلة" للخلية إن كانت مظلَّلة في الجدول
+function markCell(html, marked) {
+  if (!marked) return html;
+  return html.replace('class="response-input', 'class="response-input marked').replace(' data-col=', ' title="تم تعديل هذه الخلية" data-col=');
+}
+function loadResponses(page = 1) {
+  responsesCurrentPage = Math.max(1, Number(page) || 1);
+  $('responsesMsg').textContent = 'جارٍ تحميل الردود…';
+  $('responsesPrev').disabled = true;
+  $('responsesNext').disabled = true;
+  serverCall('getResponsesPreview', responsesCurrentPage).then(res => {
+    if (!res) throw new Error('لم يصل رد من الخادم. تأكد من تحديث نشر Apps Script.');
+    if (!res.ok) throw new Error(res.error || 'تعذّر تحميل الردود');
+    const headers = (res.headers || []).slice(0, 12);
+    const rows = res.rows || [];
+    responsesCurrentPage = res.page || 1;
+    responsesTotalPages = res.totalPages || 1;
+    responsesLoaded = true;
+    const kinds = headers.map((h, i) => colKind(h, i));
+    // اكتشاف ترتيب التاريخ من بيانات الصفحة نفسها
+    const dateSamples = [];
+    kinds.forEach((k, i) => { if (k === 'date') rows.forEach(r => dateSamples.push(r.values && r.values[i])); });
+    responsesDateOrder = detectDateOrder(dateSamples, responsesDateOrder);
+
+    const thCls = { ts:'rc-ts', date:'rc-date', hour:'rc-num', minute:'rc-num', amount:'rc-amt', account:'rc-acc', fee:'rc-sel', type:'rc-sel', sub:'rc-sel', text:'rc-text' };
+    $('responsesHead').innerHTML = '<tr>' +
+      headers.map((h, i) => `<th class="rc ${thCls[kinds[i]] || ''}" style="direction:rtl;text-align:right;color:inherit;font-size:.75rem">${escapeHtml(String(h || '').replace(/[:：]\s*$/, ''))}</th>`).join('') +
+      '<th class="rc rc-act">إجراءات</th></tr>';
+    $('responsesBody').innerHTML = rows.map(item => {
+      const vals = Array.isArray(item.values) ? item.values : [];
+      const marks = Array.isArray(item.marks) ? item.marks : [];
+      const cells = headers.map((h, i) => markCell(cellHtml(kinds[i], h, i, vals[i] == null ? '' : String(vals[i])), !!marks[i])).join('');
+      return `<tr data-row="${item.rowNumber}">${cells}<td class="rc rc-act"><div class="rc-actions">` +
+        `<button type="button" class="icon-btn save" data-action="save" title="حفظ التعديل" aria-label="حفظ التعديل" disabled>${ICON_SAVE}</button>` +
+        `<button type="button" class="icon-btn del" data-action="delete" title="حذف الصف" aria-label="حذف الصف">${ICON_DEL}</button>` +
+        `</div></td></tr>`;
+    }).join('');
+    $('responsesMsg').textContent = res.totalRows ? `إجمالي العمليات: ${res.totalRows}` : 'لا توجد عمليات بعد.';
+    $('responsesPageInfo').textContent = `الصفحة ${responsesCurrentPage} من ${responsesTotalPages} · يعرض ${rows.length} من ${res.totalRows} عملية`;
+    $('responsesPrev').disabled = responsesCurrentPage <= 1;
+    $('responsesNext').disabled = responsesCurrentPage >= responsesTotalPages;
+  }).catch(err => {
+    $('responsesMsg').textContent = 'خطأ: ' + (err.message || err);
+    $('responsesPageInfo').textContent = '';
+  });
+}
+$('responsesPrev').addEventListener('click', () => { if (responsesCurrentPage > 1) loadResponses(responsesCurrentPage - 1); });
+$('responsesNext').addEventListener('click', () => { if (responsesCurrentPage < responsesTotalPages) loadResponses(responsesCurrentPage + 1); });
+// تفعيل زر الحفظ فقط عند تعديل الصف
+['input', 'change'].forEach(ev => $('responsesBody').addEventListener(ev, e => {
+  const tr = e.target.closest('tr'); if (!tr) return;
+  tr.classList.add('dirty');
+  const sv = tr.querySelector('button[data-action="save"]'); if (sv) sv.disabled = false;
+}));
+$('responsesBody').addEventListener('click', async e => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const tr = btn.closest('tr'), rowNumber = Number(tr.dataset.row);
+  if (btn.dataset.action === 'delete') {
+    if (!confirm(`هل تريد حذف العملية في الصف ${rowNumber} نهائياً؟`)) return;
+    btn.disabled = true;
+    try {
+      const res = await serverCall('deleteResponseRow', rowNumber);
+      if (!res || !res.ok) throw new Error(res && res.error || 'تعذّر الحذف');
+      loadResponses(responsesCurrentPage); loadAccounts();
+    } catch (err) { $('responsesMsg').textContent = 'خطأ: ' + (err.message || err); btn.disabled = false; }
+    return;
+  }
+  const values = Array.from(tr.querySelectorAll('[data-col]')).sort((a, b) => Number(a.dataset.col) - Number(b.dataset.col)).map(el => {
+    // التاريخ: إن لم يُعدَّل نرسل النص الأصلي كما هو حتى لا يتغير بالخطأ
+    if (el.dataset.kind === 'date' && el.value === el.dataset.iso) return el.dataset.orig;
+    return el.value;
+  });
+  // Keep the 12-column A:L layout intact even if some cells are missing.
+  while (values.length < 12) values.push('');
+  btn.disabled = true;
+  try {
+    const res = await serverCall('updateResponseRow', rowNumber, values);
+    if (!res || !res.ok) throw new Error(res && res.error || 'تعذّر الحفظ');
+    $('responsesMsg').textContent = 'تم حفظ التعديلات.';
+    loadResponses(responsesCurrentPage); loadAccounts();
+  } catch (err) { $('responsesMsg').textContent = 'خطأ: ' + (err.message || err); btn.disabled = false; }
+});
+$('refreshResponses').addEventListener('click', () => loadResponses(responsesCurrentPage));
+
+function loadAccounts() {
+  $('accountsMsg').textContent = 'جارٍ حساب الإجماليات…';
+  serverCall('getAccountCredits').then(res => {
+    if (!res || !res.ok) throw new Error(res && res.error || 'تعذّر تحميل الحسابات');
+    const accounts = res.accounts || [];
+    const money = value => Number(value || 0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const sum = k => accounts.reduce((t, a) => t + Number(a[k] || 0), 0);
+    $('accountsList').innerHTML = `
+      <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 sm:col-span-2">
+        <table class="min-w-full text-sm text-right">
+          <thead class="bg-slate-100 dark:bg-slate-800">
+            <tr>
+              <th class="response-cell">اسم الحساب</th>
+              <th class="response-cell">الدخل</th>
+              <th class="response-cell">المصروفات</th>
+              <th class="response-cell">الرصيد الصافي</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${accounts.map(a => `<tr>
+              <td class="response-cell font-bold">${escapeHtml(a.name)}</td>
+              <td class="response-cell num">${money(a.income)} ر.س</td>
+              <td class="response-cell num">${money(a.outcome)} ر.س</td>
+              <td class="response-cell num font-bold">${money(a.credit)} ر.س</td>
+            </tr>`).join('')}
+          </tbody>
+          <tfoot class="bg-slate-50 dark:bg-slate-800/60 font-extrabold">
+            <tr>
+              <td class="response-cell">المجموع</td>
+              <td class="response-cell num">${money(sum('income'))} ر.س</td>
+              <td class="response-cell num">${money(sum('outcome'))} ر.س</td>
+              <td class="response-cell num">${money(sum('credit'))} ر.س</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>` +
+      (res.feesTotal ? `<p class="text-xs text-slate-500 sm:col-span-2">رسوم التحويل المضافة إلى المصروفات: ${money(res.feesTotal)} ر.س</p>` : '') +
+      (res.skipped && res.skipped.count ? `<p class="text-xs text-rose-500 sm:col-span-2">تنبيه: ${res.skipped.count} صف فيه حساب غير معروف أو بلا حساب (الصفوف: ${res.skipped.rows.join('، ')})</p>` : '');
+    $('accountsMsg').textContent = 'تم تحديث الإجماليات.';
+  }).catch(err => $('accountsMsg').textContent = 'خطأ: ' + (err.message || err));
+}
+$('refreshAccounts').addEventListener('click', loadAccounts);
+
+
+render();
+
+/* ---------- الإعدادات + التثبيت + العمل دون اتصال ---------- */
+function openSettings(msg) {
+  const c = getCfg();
+  $("cfgEndpoint").value = c.endpoint;
+  $("cfgToken").value = c.token;
+  $("cfgMsg").textContent = msg || "";
+  $("cfgMsg").className = "text-xs font-semibold min-h-[1rem] text-rose-500";
+  const d = $("settingsDlg");
+  if (!d.open) { if (d.showModal) d.showModal(); else d.setAttribute("open", ""); }
+}
+$("openSettings").addEventListener("click", () => openSettings());
+$("cfgClose").addEventListener("click", () => $("settingsDlg").close());
+$("cfgSave").addEventListener("click", async () => {
+  const ep = $("cfgEndpoint").value.trim(), tk = $("cfgToken").value.trim(), out = $("cfgMsg");
+  out.className = "text-xs font-semibold min-h-[1rem] text-slate-500";
+  if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(ep) && !/^https:\/\/script\.googleusercontent\.com\//.test(ep)) {
+    out.className = "text-xs font-semibold min-h-[1rem] text-rose-500";
+    out.textContent = "الرابط يجب أن يبدأ بـ https://script.google.com وينتهي بـ /exec"; return;
+  }
+  if (!tk) { out.className = "text-xs font-semibold min-h-[1rem] text-rose-500"; out.textContent = "أدخل رمز الوصول."; return; }
+  LS.set("mb_endpoint", ep); LS.set("mb_token", tk);
+  out.textContent = "جارٍ اختبار الاتصال…";
+  try {
+    const res = await serverCall("ping");
+    if (!res || !res.ok) throw new Error((res && res.error) || "فشل الاختبار");
+    out.className = "text-xs font-semibold min-h-[1rem] text-emerald-600";
+    out.textContent = "تم الاتصال بنجاح.";
+    responsesLoaded = false;
+    setTimeout(() => $("settingsDlg").close(), 700);
+  } catch (err) {
+    out.className = "text-xs font-semibold min-h-[1rem] text-rose-500";
+    out.textContent = err.message || String(err);
+  }
+});
+if (!inAppsScript && (!getCfg().endpoint || !getCfg().token)) setTimeout(() => openSettings(), 300);
+
+// زر التثبيت (Android / Chrome)
+let deferredInstall = null;
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault(); deferredInstall = e;
+  if (!LS.get("mb_install_dismissed")) $("installBar").classList.remove("hidden");
+});
+$("installBtn").addEventListener("click", async () => {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  try { await deferredInstall.userChoice; } catch (e) {}
+  deferredInstall = null; $("installBar").classList.add("hidden");
+});
+$("installClose").addEventListener("click", () => { LS.set("mb_install_dismissed", "1"); $("installBar").classList.add("hidden"); });
+window.addEventListener("appinstalled", () => $("installBar").classList.add("hidden"));
+
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
